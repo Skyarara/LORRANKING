@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draggable Music Ranking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #ranking {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .draggable {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f4f4f4;
+            border: 1px solid #ccc;
+            cursor: grab;
+        }
+        .draggable.dragging {
+            background: #ddd;
+            cursor: grabbing;
+        }
+        iframe {
+            margin-top: 20px;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Draggable Music Ranking</h1>
+    <ul id="ranking">
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/suuVWoHq7qs">Makulth</li>
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/FjVNHFRS438">Yesod</li>
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/83vTbIzGZ4Y">Hod</li>
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/EhVYgEPUb9o">Netzach</li>
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/bb5njE5QD3E">Tiphereth</li>
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/Ugu85byfgXs">Gebura</li>
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/I3XufStjlEc">Chesed</li>
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/u3Jylwpj8Ow">Binah</li>
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/XXg5JiyQud8">Hokma</li>
+        <li class="draggable" draggable="true" data-video="https://www.youtube.com/embed/mGKl5KLJAq8">Kether</li>
+    </ul>
+    <iframe id="player" src=""></iframe>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    const rankingList = document.getElementById('ranking');
+    let dragItem = null;
+
+    // Drag Events for Desktop
+    rankingList.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('draggable')) {
+            dragItem = e.target;
+            e.target.classList.add('dragging');
+        }
+    });
+
+    rankingList.addEventListener('dragend', (e) => {
+        if (dragItem) {
+            dragItem.classList.remove('dragging');
+            dragItem = null;
+            saveRanking();
+        }
+    });
+
+    rankingList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const dragging = document.querySelector('.dragging');
+        const afterElement = getDragAfterElement(rankingList, e.clientY);
+        if (afterElement == null) {
+            rankingList.appendChild(dragging);
+        } else {
+            rankingList.insertBefore(dragging, afterElement);
+        }
+    });
+
+    // Touch Events for Mobile
+    rankingList.addEventListener('touchstart', (e) => {
+        if (e.target.classList.contains('draggable')) {
+            dragItem = e.target;
+            dragItem.classList.add('dragging');
+        }
+    });
+
+    rankingList.addEventListener('touchmove', (e) => {
+        if (dragItem) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const afterElement = getDragAfterElement(rankingList, touch.clientY);
+            if (afterElement == null) {
+                rankingList.appendChild(dragItem);
+            } else {
+                rankingList.insertBefore(dragItem, afterElement);
+            }
+        }
+    });
+
+    rankingList.addEventListener('touchend', () => {
+        if (dragItem) {
+            dragItem.classList.remove('dragging');
+            dragItem = null;
+            saveRanking();
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.draggable:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function saveRanking() {
+        const ranking = [...rankingList.children].map(li => li.textContent);
+        localStorage.setItem('ranking', JSON.stringify(ranking));
+    }
+
+    function loadRanking() {
+        const savedRanking = JSON.parse(localStorage.getItem('ranking'));
+        if (savedRanking && Array.isArray(savedRanking)) {
+            const items = [...rankingList.children];
+            rankingList.innerHTML = '';
+            savedRanking.forEach(text => {
+                const item = items.find(li => li.textContent.trim() === text.trim());
+                if (item) {
+                    rankingList.appendChild(item);
+                }
+            });
+        }
+    }
+
+    rankingList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('draggable')) {
+            const videoUrl = e.target.getAttribute('data-video');
+            document.getElementById('player').src = videoUrl;
+        }
+    });
+
+    loadRanking();
+});
+
+    </script>
+</body>
+</html>
